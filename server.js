@@ -2,6 +2,7 @@ require("dotenv").config();
 
 const express = require("express");
 const app = express();
+const cors = require('cors');
 const mongoose = require("mongoose");
 
 mongoose.connect(process.env.DATABASE_URL, { useNewUrlParser: true });
@@ -13,6 +14,7 @@ db.once("open", () => console.error("Connected to DB"));
 app.use(express.json());
 
 const apiRouter = require("./routes/api");
+app.use(cors());
 app.use("/api", apiRouter);
 
-app.listen(3000, () => console.log("Server is running on port 3000"));
+app.listen(8443, () => console.log("Server is running on port 8443"));

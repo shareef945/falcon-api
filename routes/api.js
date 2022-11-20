@@ -17,6 +17,22 @@ router.get("/customer", async (req, res) => {
   }
 });
 
+//sign in endpoint
+router.post('/login', async (req, res) => {
+  try {
+    const customer = await CustomerInfo.findOne({"Email Address": req.body.email});
+    // match password, ideally more complicated than this direct password comparison because need to compare hashes?
+    console.log(req.body.email);
+    if (req.body.password === customer.Password){
+      res.send(customer);
+    } else {
+      res.send("Incorrect password");
+    }
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
 //create customer
 router.post("/customer", async (req, res) => {
   const customerInfo = new CustomerInfo({
@@ -41,8 +57,11 @@ router.post("/customer", async (req, res) => {
     "Last Transaction Date": req.body["Last Transaction Date"],
     "Last Transaction Due Date": req.body["Last Transaction Due Date"],
   });
+  console.log(customerInfo);
 
   try {
+    // Added a unique = true to the email and phone number in the model, but it won't follow it because people already have duplicate emails
+    // there isn't any other reliable way to prevent duplicate accounts and people creating multiple accounts
     const newCustomerInfo = await customerInfo.save();
     res.status(201).json(newCustomerInfo);
   } catch (err) {
