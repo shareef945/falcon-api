@@ -5,6 +5,7 @@ const TransactionData = require("../models/transactionData");
 const ProductData = require("../models/productInfo");
 const AssetInfo = require("../models/assetInfo");
 
+
 // ?CUSTOMER APIS
 
 //get all customers
@@ -20,10 +21,10 @@ router.get("/customer", async (req, res) => {
 //sign in endpoint
 router.post('/login', async (req, res) => {
   try {
-    const customer = await CustomerInfo.findOne({"Email Address": req.body.email});
+    const customer = await CustomerInfo.findOne({ "Email Address": req.body.email });
     // match password, ideally more complicated than this direct password comparison because need to compare hashes?
     console.log(req.body.email);
-    if (req.body.password === customer.Password){
+    if (req.body.password === customer.Password) {
       res.send(customer);
     } else {
       res.send("Incorrect password");
