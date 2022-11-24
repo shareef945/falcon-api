@@ -159,6 +159,16 @@ router.get("/products", async (req, res) => {
   }
 });
 
+//get one customer's products
+router.post("/getproducts", async (req, res) => {
+  try {
+    const productDatas = await ProductData.find({"Customer ID": req.body["Customer ID"]});
+    res.send(productDatas);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
 //create product
 router.post("/products", async (req, res) => {
   const productInfo = new ProductData({
@@ -169,7 +179,7 @@ router.post("/products", async (req, res) => {
     "Asset ID": req.body["Asset ID"],
     "Asset Make": req.body["Asset Make"],
     "Asset Model": req.body["Asset Model"],
-    "Preffered Payment Details": req.body["Preffered Payment Details"],
+    "Preferred Payment Details": req.body["Preferred Payment Details"],
     "Purchase Value": req.body["Purchase Value"],
     "Sale Value": req.body["Sale Value"],
     Interest: req.body["Interest"],
