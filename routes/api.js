@@ -5,6 +5,7 @@ const TransactionData = require("../models/transactionData");
 const ProductData = require("../models/productInfo");
 const AssetInfo = require("../models/assetInfo");
 
+
 // ?CUSTOMER APIS
 
 //get all customers
@@ -12,6 +13,22 @@ router.get("/customer", async (req, res) => {
   try {
     const customerInfos = await CustomerInfo.find();
     res.send(customerInfos);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
+//sign in endpoint
+router.post('/login', async (req, res) => {
+  try {
+    const customer = await CustomerInfo.findOne({ "Email Address": req.body.email });
+    // match password, ideally more complicated than this direct password comparison because need to compare hashes?
+    console.log(req.body.email);
+    if (req.body.password === customer.Password) {
+      res.send(customer);
+    } else {
+      res.send("Incorrect password");
+    }
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
@@ -41,8 +58,11 @@ router.post("/customer", async (req, res) => {
     "Last Transaction Date": req.body["Last Transaction Date"],
     "Last Transaction Due Date": req.body["Last Transaction Due Date"],
   });
+  console.log(customerInfo);
 
   try {
+    // Added a unique = true to the email and phone number in the model, but it won't follow it because people already have duplicate emails
+    // there isn't any other reliable way to prevent duplicate accounts and people creating multiple accounts
     const newCustomerInfo = await customerInfo.save();
     res.status(201).json(newCustomerInfo);
   } catch (err) {
@@ -139,6 +159,16 @@ router.get("/products", async (req, res) => {
   }
 });
 
+//get one customer's products
+router.post("/getproducts", async (req, res) => {
+  try {
+    const productDatas = await ProductData.find({"Customer ID": req.body["Customer ID"]});
+    res.send(productDatas);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
 //create product
 router.post("/products", async (req, res) => {
   const productInfo = new ProductData({
@@ -149,7 +179,7 @@ router.post("/products", async (req, res) => {
     "Asset ID": req.body["Asset ID"],
     "Asset Make": req.body["Asset Make"],
     "Asset Model": req.body["Asset Model"],
-    "Preffered Payment Details": req.body["Preffered Payment Details"],
+    "Preferred Payment Details": req.body["Preferred Payment Details"],
     "Purchase Value": req.body["Purchase Value"],
     "Sale Value": req.body["Sale Value"],
     Interest: req.body["Interest"],
