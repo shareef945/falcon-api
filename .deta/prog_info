@@ -1,0 +1,1 @@
+{"id":"65732d5f-a591-4134-9dea-20f0ba6d09bc","space":39329,"runtime":"nodejs14.x","name":"falcon-api","path":"8k7pdn","project":"a0fv98u7","account":"144798365827","region":"eu-central-1","deps":["express@^4.18.2","mongoose@^6.7.1","cors@^2.8.5"],"envs":["DATABASE_URL"],"public":true,"log_level":"off","cron":""}
