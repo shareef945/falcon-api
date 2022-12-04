@@ -196,10 +196,24 @@ router.post("/products", async (req, res) => {
   }
 });
 
-//get one product by id
+//get one product by product id
 router.get("/products/:id", getProductData, (req, res) => {
   res.send(res.productData);
 });
+
+//get all products by customer id
+router.get("/products/customer/:id", async (req, res) => {
+  try {
+    const productDatas = await ProductData.find({
+      "Customer ID": req.params.id,
+    });
+    res.send(productDatas);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
+
 
 //update one
 router.patch("/products/:id", getProductData, async (req, res) => {
@@ -375,7 +389,6 @@ router.post("/rates", async (req, res) => {
 });
 
 // *DONE WITH ABOVE
-
 
 // !Pending asset APIs
 
