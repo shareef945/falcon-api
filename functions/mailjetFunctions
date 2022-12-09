@@ -1,0 +1,35 @@
+const Mailjet = require('node-mailjet');
+module.exports.sendApprovalEmail = async function (body) {
+  const mailjet = Mailjet.apiConnect(
+    process.env.MJ_APIKEY_PUBLIC,
+    process.env.MJ_APIKEY_PRIVATE,
+  );
+  return mailjet
+    .post("send", { 'version': 'v3.1' })
+    .request({
+      "Messages": [
+        {
+          "From": {
+            "Email": "hello@joincircleclub.com",
+            "Name": "Falcon",
+          },
+          "To": [
+            {
+              "Email": body["Email Address"],
+              "Name": body["First Name"]
+            }
+          ],
+          "TemplateID": body["Template ID"],
+          "TemplateLanguage": true,
+          "Subject": 'Good news [[data:firstName:"Friend"]]',
+          "Variables": {
+            "firstName": body["First Name"],
+            "repaymentText": body["repaymentText"],
+            "totalCost": body["totalCost"],
+          }
+
+        }
+      ]
+    }).then(data => data.json()
+    ).catch(error => error);
+}
