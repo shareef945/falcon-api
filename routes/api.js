@@ -4,6 +4,28 @@ const CustomerInfo = require("../models/customerInfo");
 const TransactionData = require("../models/transactionData");
 const ProductData = require("../models/productInfo");
 const AssetInfo = require("../models/assetInfo");
+const InterestRates = require("../models/interestRates");
+const productInfo = require("../models/productInfo");
+
+// !update with hashing
+
+//sign in endpoint
+router.post('/login', async (req, res) => {
+  try {
+    const customer = await CustomerInfo.findOne({
+      "Email Address": req.body.email
+    });
+    // match password, ideally more complicated than this direct password comparison because need to compare hashes?
+    console.log(req.body.email);
+    if (req.body.password === customer.Password) {
+      res.send(customer);
+    } else {
+      res.send("Incorrect password");
+    }
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
 
 // ?CUSTOMER APIS
 
@@ -12,22 +34,6 @@ router.get("/customer", async (req, res) => {
   try {
     const customerInfos = await CustomerInfo.find();
     res.send(customerInfos);
-  } catch (err) {
-    res.status(500).json({ message: err.message });
-  }
-});
-
-//sign in endpoint
-router.post('/login', async (req, res) => {
-  try {
-    const customer = await CustomerInfo.findOne({"Email Address": req.body.email});
-    // match password, ideally more complicated than this direct password comparison because need to compare hashes?
-    console.log(req.body.email);
-    if (req.body.password === customer.Password){
-      res.send(customer);
-    } else {
-      res.send("Incorrect password");
-    }
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
@@ -57,12 +63,9 @@ router.post("/customer", async (req, res) => {
     "Last Transaction Date": req.body["Last Transaction Date"],
     "Last Transaction Due Date": req.body["Last Transaction Due Date"],
   });
-  console.log(customerInfo);
 
   try {
-    // Added a unique = true to the email and phone number in the model, but it won't follow it because people already have duplicate emails
-    // there isn't any other reliable way to prevent duplicate accounts and people creating multiple accounts
-    const newCustomerInfo = await customerInfo.save();
+    const newCustomerInfo = await customerInfo.save(); // TODO! send email verification link
     res.status(201).json(newCustomerInfo);
   } catch (err) {
     res.status(400).json({ message: err.message });
@@ -194,10 +197,24 @@ router.post("/products", async (req, res) => {
   }
 });
 
-//get one product by id
+//get one product by product id
 router.get("/products/:id", getProductData, (req, res) => {
   res.send(res.productData);
 });
+
+//get all products by customer id
+router.get("/products/customer/:id", async (req, res) => {
+  try {
+    const productDatas = await ProductData.find({
+      "Customer ID": req.params.id,
+    });
+    res.send(productDatas);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
+
 
 //update one
 router.patch("/products/:id", getProductData, async (req, res) => {
@@ -279,10 +296,12 @@ router.patch("/products/:id", getProductData, async (req, res) => {
     res.productData["Balance"] = req.body["Balance"];
   }
   try {
-    const updatedProductData = await res.productInfo.save();
+    console.log(req.body)
+    const updatedProductData = await res.productData.save();
     res.json(updatedProductData);
   } catch (err) {
     res.status(400).json({ message: err.message });
+    console.log(err)
   }
 });
 
@@ -330,10 +349,100 @@ router.get(
   }
 );
 
+async function mailjetRequest(body) {
+  const Mailjet = require('node-mailjet');
+  const mailjet = Mailjet.apiConnect(
+    process.env.MJ_APIKEY_PUBLIC,
+    process.env.MJ_APIKEY_PRIVATE,
+  );
+  return mailjet
+    .post("send", { 'version': 'v3.1' })
+    .request({
+      "Messages": [
+        {
+          "From": {
+            "Email": "hello@joincircleclub.com",
+            "Name": "Falcon",
+          },
+          "To": [
+            {
+              "Email": body["Email Address"],
+              "Name": body["First Name"]
+            }
+          ],
+          "TemplateID": body["Template ID"],
+          "TemplateLanguage": true,
+          "Subject": 'Good news [[data:firstName:"Friend"]]',
+          "Variables": {
+            "firstName": body["First Name"],
+            "repaymentText": body["repaymentText"],
+            "totalCost": body["totalCost"],
+          }
+
+        }
+      ]
+    }).then(data => data.json()
+    ).catch(error => error);
+}
+
+// mailjet function to send an email when approved
+router.post('/sendApprovalEmail', async (req, res) => {
+  try {
+    const result = await mailjetRequest(req.body);
+    res.send(result);
+  } catch (err) {
+    res.status(400).json({ message: err.message });
+  }
+  // await request.then((result) => {
+  //   console.log(result.body);
+  //   res.send(result);
+  // }).catch((err) => {
+  //   console.log(err);
+  //   res.status(400).send(err);
+  // })
+});
+
+
 // get one transactions
 
 router.get("/transactions/id/:id", getTransactionDataById, (req, res) => {
   res.send(res.transactionInfo1);
+});
+
+
+// ?Interest Rates Api
+
+
+router.get("/rates", async (req, res) => {
+  try {
+    const interestRate = await InterestRates.find();
+    res.send(interestRate);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
+router.post("/rates", async (req, res) => {
+  const interestRate = new InterestRates({
+    "3 months": req.body["3 months"],
+    "6 months": req.body["6 months"],
+    "9 months": req.body["9 months"],
+    "12 months": req.body["12 months"],
+    "15 months": req.body["15 months"],
+    "18 months": req.body["18 months"],
+    "21 months": req.body["21 months"],
+    "24 months": req.body["24 months"],
+    "27 months": req.body["27 months"],
+    "30 months": req.body["30 months"],
+    "33 months": req.body["33 months"],
+    "36 months": req.body["36 months"],
+  })
+  try {
+    const newInterestRate = await interestRate.save();
+    res.status(201).json(newInterestRate);
+  } catch (err) {
+    res.status(400).json({ message: err.message });
+  }
 });
 
 // *DONE WITH ABOVE
@@ -347,7 +456,7 @@ async function getCustomerInfo(req, res, next) {
   try {
     customerInfo = await CustomerInfo.findById(req.params.id);
     if (customerInfo == null) {
-      return res.status(404).json({ message: "Cannot find productInfo" });
+      return res.status(404).json({ message: "Cannot find customer" });
     }
   } catch (err) {
     return res.status(500).json({ message: err.message });
@@ -355,6 +464,7 @@ async function getCustomerInfo(req, res, next) {
   res.customerInfo = customerInfo;
   next();
 }
+
 
 async function getTransactionDataByProduct(req, res, next) {
   let transactionInfo;
@@ -393,9 +503,10 @@ async function getTransactionDataById(req, res, next) {
 async function getProductData(req, res, next) {
   let productData;
   try {
-    productData = await ProductData.find({
-      "Product ID": { $all: [req.params.id] },
-    });
+    productData = await ProductData.findById(req.params.id);
+    // productData = await ProductData.findById({
+    //   "_id": { $all: [req.params.id] },
+    // });
 
     if (productData == null) {
       return res.status(404).json({ message: "Cannot find productInfo" });
