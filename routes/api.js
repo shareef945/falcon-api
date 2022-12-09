@@ -6,6 +6,7 @@ const ProductData = require("../models/productInfo");
 const AssetInfo = require("../models/assetInfo");
 const InterestRates = require("../models/interestRates");
 const productInfo = require("../models/productInfo");
+const { sendApprovalEmail } = require("../functions/mailjetFunctions");
 
 // !update with hashing
 
@@ -349,57 +350,15 @@ router.get(
   }
 );
 
-async function mailjetRequest(body) {
-  const Mailjet = require('node-mailjet');
-  const mailjet = Mailjet.apiConnect(
-    process.env.MJ_APIKEY_PUBLIC,
-    process.env.MJ_APIKEY_PRIVATE,
-  );
-  return mailjet
-    .post("send", { 'version': 'v3.1' })
-    .request({
-      "Messages": [
-        {
-          "From": {
-            "Email": "hello@joincircleclub.com",
-            "Name": "Falcon",
-          },
-          "To": [
-            {
-              "Email": body["Email Address"],
-              "Name": body["First Name"]
-            }
-          ],
-          "TemplateID": body["Template ID"],
-          "TemplateLanguage": true,
-          "Subject": 'Good news [[data:firstName:"Friend"]]',
-          "Variables": {
-            "firstName": body["First Name"],
-            "repaymentText": body["repaymentText"],
-            "totalCost": body["totalCost"],
-          }
-
-        }
-      ]
-    }).then(data => data.json()
-    ).catch(error => error);
-}
 
 // mailjet function to send an email when approved
 router.post('/sendApprovalEmail', async (req, res) => {
   try {
-    const result = await mailjetRequest(req.body);
+    const result = await sendApprovalEmail(req.body);
     res.send(result);
   } catch (err) {
     res.status(400).json({ message: err.message });
   }
-  // await request.then((result) => {
-  //   console.log(result.body);
-  //   res.send(result);
-  // }).catch((err) => {
-  //   console.log(err);
-  //   res.status(400).send(err);
-  // })
 });
 
 
