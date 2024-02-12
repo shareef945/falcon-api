@@ -17,4 +17,4 @@ const apiRouter = require("./routes/api");
 app.use(cors());
 app.use("/api", apiRouter);
 
-app.listen(8443, () => console.log("Server is running on port 8443"));
+app.listen(3001, () => console.log("Server is running on port 3001"));
