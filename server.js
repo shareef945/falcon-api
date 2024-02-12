@@ -18,6 +18,6 @@ app.use(cors());
 app.get("/", (req, res) => {
   res.json({ message: "Server is running" });
 });
-app.use("/api", apiRouter);
+app.use("/", apiRouter);
 
 app.listen(3001, () => console.log("Server is running on port 3001"));
