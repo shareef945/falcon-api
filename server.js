@@ -2,7 +2,7 @@ require("dotenv").config();
 
 const express = require("express");
 const app = express();
-const cors = require('cors');
+const cors = require("cors");
 const mongoose = require("mongoose");
 
 mongoose.connect(process.env.DATABASE_URL, { useNewUrlParser: true });
@@ -16,5 +16,8 @@ app.use(express.json());
 const apiRouter = require("./routes/api");
 app.use(cors());
 app.use("/api", apiRouter);
+app.get("/", (res, req) => {
+  res.json({ message: "Server is running" });
+});
 
 app.listen(3001, () => console.log("Server is running on port 3001"));
