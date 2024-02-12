@@ -1,0 +1,239 @@
+const Mailjet = require('node-mailjet');
+const CustomerInfo = require("../models/customerInfo");
+const Str = require('@supercharge/strings')
+
+module.exports.sendApprovalEmail = async function (body) {
+  const mailjet = Mailjet.apiConnect(
+    process.env.MJ_APIKEY_PUBLIC,
+    process.env.MJ_APIKEY_PRIVATE,
+  );
+  return mailjet
+    .post("send", { 'version': 'v3.1' })
+    .request({
+      "Messages": [
+        {
+          "From": {
+            "Email": "hello@joincircleclub.com",
+            "Name": "Falcon",
+          },
+          "To": [
+            {
+              "Email": body["Email Address"],
+              "Name": body["First Name"]
+            }
+          ],
+          "TemplateID": body["Template ID"],
+          "TemplateLanguage": true,
+          "Subject": body.approved ? 'Good news [[data:firstName:"Friend"]]' : 'Your loan request was not successful',
+          "Variables": {
+            "firstName": body["First Name"],
+            "repaymentText": body["repaymentText"],
+            "totalCost": body["totalCost"],
+          }
+
+        }
+      ]
+    }).then(data => data.json()
+    ).catch(error => error);
+}
+
+// triggered by create product endpoint
+module.exports.sendLoanConfirmationEmail = async function (product, email, name) {
+  const mailjet = Mailjet.apiConnect(
+    process.env.MJ_APIKEY_PUBLIC,
+    process.env.MJ_APIKEY_PRIVATE,
+  );
+  return mailjet
+    .post("send", { 'version': 'v3.1' })
+    .request({
+      "Messages": [
+        {
+          "From": {
+            "Email": "hello@joincircleclub.com",
+            "Name": "Falcon",
+          },
+          "To": [
+            {
+              "Email": email,
+              "Name": name
+            }
+          ],
+          "TemplateID": 4422612,
+          "TemplateLanguage": true,
+          "Subject": "Your Falcon Loan Application",
+          "Variables": {
+            "loanCategory": product["Product Category"],
+            "firstName": name,
+            "principal": product["Principal"],
+            "interest": product["Interest"],
+            "repaymentAmount": product["Installment Amount"],
+            "repaymentFreq": product["Repayment Frequency"],
+            "tenure": product["Tenure"],
+            "tenureUnit": product["Tenure Unit"],
+            "totalCost": parseInt(product["Principal"]) + parseInt(product["Interest"]),
+          }
+
+        }
+      ]
+    }).then(data => data.json()
+    ).catch(error => console.error(error));
+}
+
+// triggered by create customer endpoint
+module.exports.sendWelcomeEmail = async function (body) {
+  const mailjet = Mailjet.apiConnect(
+    process.env.MJ_APIKEY_PUBLIC,
+    process.env.MJ_APIKEY_PRIVATE,
+  );
+  return mailjet
+    .post("send", { 'version': 'v3.1' })
+    .request({
+      "Messages": [
+        {
+          "From": {
+            "Email": "hello@joincircleclub.com",
+            "Name": "Falcon",
+          },
+          "To": [
+            {
+              "Email": body["Email Address"],
+              "Name": body["First Name"]
+            }
+          ],
+          "TemplateID": 4427833,
+          "TemplateLanguage": true,
+          "Subject": "Welcome to Falcon",
+          "Variables": {
+            "firstName": body["First Name"],
+          }
+
+        }
+      ]
+    }).then(data => data.json()
+    ).catch(error => error);
+}
+
+// triggered during sign up or any other verification stage
+module.exports.sendVerificationCode = async function (body) {
+  const mailjet = Mailjet.apiConnect(
+    process.env.MJ_APIKEY_PUBLIC,
+    process.env.MJ_APIKEY_PRIVATE,
+  );
+  return mailjet
+    .post("send", { 'version': 'v3.1' })
+    .request({
+      "Messages": [
+        {
+          "From": {
+            "Email": "hello@joincircleclub.com",
+            "Name": "Falcon",
+          },
+          "To": [
+            {
+              "Email": body["Email Address"],
+              "Name": body["First Name"]
+            }
+          ],
+          "TemplateID": 4427891,
+          "TemplateLanguage": true,
+          "Subject": "Your Email Verification Code",
+          "Variables": {
+            "verificationCode": body["Verification Code"],
+          }
+
+        }
+      ]
+    }).then(data => data.json()
+    ).catch(error => error);
+}
+
+async function updateCustomerToken(token) {
+  return fetch("https://8k7pdn.deta.dev/api/customer/" + customer["_id"], {
+    method: 'PATCH',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({ "Password Reset Token": token })
+  }).then(data => data.json()).catch((err) => err.json());
+}
+
+module.exports.sendPasswordResetEmail = async function (customer) {
+  const resetToken = Str.random(10)
+  const timestamp = new Date().getTime();
+  const token = { token: resetToken, timestamp: timestamp };
+  console.error(customer);
+  let url = String(process.env.PASSWORD_RESET_BASE_URL) + resetToken + '/' + customer["Email Address"];
+  console.error(url);
+  customer["Password Reset Token"] = token;
+  const customerr = await customer.save();
+  console.error("Password reset token created for ", customer["Email Address"]);
+  const mailjet = Mailjet.apiConnect(
+    process.env.MJ_APIKEY_PUBLIC,
+    process.env.MJ_APIKEY_PRIVATE,
+  );
+  return mailjet
+    .post("send", { 'version': 'v3.1' })
+    .request({
+      "Messages": [
+        {
+          "From": {
+            "Email": "hello@joincircleclub.com",
+            "Name": "Falcon",
+          },
+          "To": [
+            {
+              "Email": customer["Email Address"],
+              "Name": customer["First Name"]
+            }
+          ],
+          "TemplateID": 4429657,
+          "TemplateLanguage": true,
+          "Subject": "Password Reset Link",
+          "Variables": {
+            "resetPasswordLink": url,
+          }
+
+        }
+      ]
+    }).then(data => data.json()
+    ).catch(error => error);
+
+}
+
+module.exports.sendPaymentReminderEmail = async function (customer, repayment) {
+  const mailjet = Mailjet.apiConnect(
+    process.env.MJ_APIKEY_PUBLIC,
+    process.env.MJ_APIKEY_PRIVATE,
+  );
+  return mailjet
+    .post("send", { 'version': 'v3.1' })
+    .request({
+      "Messages": [
+        {
+          "From": {
+            "Email": "hello@joincircleclub.com",
+            "Name": "Falcon",
+          },
+          "To": [
+            {
+              "Email": customer["Email Address"],
+              "Name": customer["First Name"]
+            }
+          ],
+          "TemplateID": 4540680,
+          "TemplateLanguage": true,
+          "Subject": "Quick reminder - a payment is coming up",
+          "Variables": {
+            "productCategory": repayment.productCategory,
+            "firstName": customer["First Name"],
+            "paymentDueDate": repayment.repaymentDate,
+            "totalAmount": repayment.totalAmount,
+            "installmentAmount": repayment.installmentAmount,
+            "paid": repayment.paid,
+            "balance": repayment.balance
+          }
+        }
+      ]
+    }).then(data => data.json()
+    ).catch(error => error);
+}
