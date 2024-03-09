@@ -15,4 +15,4 @@ const sendSMS = async function (body) {
   return messages;
 };
 
-export { sendSMS };
+module.exports = { sendSMS };
