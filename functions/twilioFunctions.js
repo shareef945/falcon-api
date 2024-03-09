@@ -2,7 +2,7 @@ const accountSid = process.env.REACT_APP_TWILIO_ACCOUNT_SID;
 const authToken = process.env.REACT_APP_TWILIO_AUTH_TOKEN;
 const client = require('twilio')(accountSid, authToken);
 
-module.exports.sendSMS = async function (body) {
+export async function sendSMS (body) {
      const messages = await client.messages
         .create({
             body: body.body,
